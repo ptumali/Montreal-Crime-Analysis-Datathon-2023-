@@ -1,5 +1,6 @@
 import sqlite3
 import plotly.express as px
+import pandas as pd
 from pathlib import Path
 
 # TODO Segmentation bar graph of crimes based on precincts
@@ -51,7 +52,24 @@ def _find_year_crime_amount() -> dict:
         year_crime_amount_dict[i[0]] = i[1]
     return year_crime_amount_dict
 
+def segmentation_graph_crimes_and_precincts() -> None:
+    categ_amt_precinct_df = _find_category_amount_precinct_dataframe()
+    fig = px.bar(categ_amt_precinct_df,
+                 x= "PDQ",
+                 y= "count",
+                 color= "CATEGORIE",
+                 title= "The number of crimes in a specific precinct")
+    fig.show()
 
+def _find_category_amount_precinct_dataframe() -> pd.DataFrame:
+    df = pd.read_sql_query("SELECT PDQ, categorie, COUNT(categorie) AS count "
+                           "FROM crime "
+                           "GROUP BY PDQ, categorie;", connection)
+    # df = pd.read_sql_query("SELECT PDQ, categorie, COUNT(categorie) AS count "
+    #                        "FROM crime "
+    #                        "GROUP BY PDQ;", connection)
+    return df
 
 if __name__ == "__main__":
-    line_graph_years_and_crime()
+    print(_find_category_amount_precinct_dataframe())
+    # segmentation_graph_crimes_and_precincts()
