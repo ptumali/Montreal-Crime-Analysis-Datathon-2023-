@@ -61,12 +61,20 @@ def segmentation_graph_crimes_and_precincts() -> None:
     fig.show()
 
 def _find_categ_amt_precinct_df() -> pd.DataFrame:
-    df = pd.read_sql_query("SELECT PDQ, categorie, COUNT(categorie) AS count "
-                           "FROM crime "
-                           "GROUP BY PDQ, categorie;", connection)
-    # df = pd.read_sql_query("SELECT PDQ, categorie, COUNT(categorie) AS count "
-    #                        "FROM crime "
-    #                        "GROUP BY PDQ;", connection)
+    query = """
+            SELECT PDQ, categorie, COUNT(categorie) AS count
+            FROM crime
+            GROUP BY PDQ, categorie
+            ORDER BY CASE
+                    WHEN categorie = 'Vol dans / sur véhicule à moteur' then 1
+                    WHEN categorie = 'Introduction' then 2
+                    WHEN categorie = 'Méfait' then 3
+                    WHEN categorie = 'Vol de véhicule à moteur' then 4
+                    WHEN categorie = 'Vols qualifiés' then 5
+                    WHEN categorie = 'Infractions entrainant la mort' then 6
+                    END;
+            """
+    df = pd.read_sql_query(query, connection)
     return df
 
 def bar_graph_tof_crime_rate() -> None:
@@ -108,17 +116,27 @@ def _find_spec_categ_in_precinct(category: str) -> pd.DataFrame:
     df = pd.read_sql_query(query, connection)
     return df
 
-if __name__ == "__main__":
-    introduction = ("Introduction", "reds")
-    vol_dans = ("Vol dans / sur véhicule à moteur", "blues")
-    vol_vehicle = ("Vol de véhicule à moteur", "purples")
-    mefait = ("Méfait", "greens")
-    vol_qualif = ("Vols qualifiés", "oranges")
-    infraction = ("Infractions entrainant la mort", "teal")
+def organize_category_amount_precinct_38() -> dict:
+    categ_dict = dict()
+    categ_dict['Breaking and Entering'] = _find_category_amount_precinct_38('Introduction')
+    categ_dict['Theft from/to a motor vehicle'] = _find_category_amount_precinct_38('Vol dans / sur véhicule à moteur')
+    categ_dict['Theft of a motor vehicle'] = _find_category_amount_precinct_38('Vol de véhicule à moteur')
+    categ_dict['Mischief'] = _find_category_amount_precinct_38('Méfait')
+    categ_dict['Robbery'] = _find_category_amount_precinct_38('Vols qualifiés')
+    categ_dict['Murder resulting death'] = _find_category_amount_precinct_38('Infractions entrainant la mort')
+    return categ_dict
 
-    make_map(*introduction)
-    make_map(*vol_dans)
-    make_map(*vol_vehicle)
-    make_map(*mefait)
-    make_map(*vol_qualif)
-    make_map(*infraction)
+def _find_category_amount_precinct_38(categ_name: str) -> int:
+    cursor.execute('SELECT categorie ,count(*) '
+                   'FROM crime '
+                   'WHERE categorie =? AND PDQ = 38 '
+                   'GROUP BY categorie;',
+                    (categ_name,))
+
+    result = cursor.fetchall()
+    return result[0][1]
+
+def pie_chart_crime_prop_precinct_38() -> None:
+    crime_dict = organize_category_amount_precinct_38()
+    fig = px.pie(values=crime_dict.values(), names=crime_dict.keys())
+    fig.show()
