@@ -3,7 +3,6 @@ import plotly.express as px
 import pandas as pd
 from pathlib import Path
 
-# TODO Segmentation bar graph of crimes based on precincts
 # TODO plotly map
 # TODO Bar graph(x-axis=day of time, y-axis=amount of crimes)
 
