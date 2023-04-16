@@ -1,12 +1,15 @@
 import sqlite3
+import json
 import plotly.express as px
 import pandas as pd
 from pathlib import Path
 
 # TODO plotly map
 
-connection = sqlite3.connect(Path("D:/UCI/Montreal-Crime-Analysis-Datathon-2023-/crime.db"))
+db_path = Path.cwd()/'crime.db'
+connection = sqlite3.connect(db_path)
 cursor = connection.cursor()
+geojsonPath = Path.cwd()/'limitespdq.geojson'
 
 def organize_category_amount() -> dict:
     categ_dict = dict()
@@ -90,6 +93,34 @@ def _find_categ_amount_tofd() -> pd.DataFrame:
     df = pd.read_sql_query(query, connection)
     return df
 
+def make_map(category: str, color_scheme: str) -> None:
+    geojson = json.load(open(geojsonPath, "r"))
+    some_df = _find_spec_categ_in_precinct(category)
+    fig = px.choropleth_mapbox(some_df, geojson=geojson,
+                               color="count",
+                               locations="PDQ", featureidkey="properties.PDQ",
+                               center={'lat': 45.508888, 'lon': -73.561668},
+                               mapbox_style="carto-positron",
+                               zoom=9,
+                               color_continuous_scale=color_scheme,)
+    fig.show()
+
+def _find_spec_categ_in_precinct(category: str) -> pd.DataFrame:
+    query = "SELECT PDQ, COUNT(categorie) AS count " + "FROM crime " + f'WHERE categorie = "{category}" ' + "GROUP BY PDQ;"
+    df = pd.read_sql_query(query, connection)
+    return df
+
 if __name__ == "__main__":
-    print(_find_categ_amount_tofd())
-    bar_graph_tof_crime_rate()
+    introduction = ("Introduction", "reds")
+    vol_dans = ("Vol dans / sur véhicule à moteur", "blues")
+    vol_vehicle = ("Vol de véhicule à moteur", "purples")
+    mefait = ("Méfait", "greens")
+    vol_qualif = ("Vols qualifiés", "oranges")
+    infraction = ("Infractions entrainant la mort", "teal")
+
+    make_map(*introduction)
+    make_map(*vol_dans)
+    make_map(*vol_vehicle)
+    make_map(*mefait)
+    make_map(*vol_qualif)
+    make_map(*infraction)
