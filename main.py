@@ -4,8 +4,6 @@ import plotly.express as px
 import pandas as pd
 from pathlib import Path
 
-# TODO plotly map
-
 db_path = Path.cwd()/'crime.db'
 connection = sqlite3.connect(db_path)
 cursor = connection.cursor()
