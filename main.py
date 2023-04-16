@@ -4,7 +4,6 @@ import pandas as pd
 from pathlib import Path
 
 # TODO plotly map
-# TODO Bar graph(x-axis=day of time, y-axis=amount of crimes)
 
 connection = sqlite3.connect(Path("D:/UCI/Montreal-Crime-Analysis-Datathon-2023-/crime.db"))
 cursor = connection.cursor()
@@ -52,7 +51,7 @@ def _find_year_crime_amount() -> dict:
     return year_crime_amount_dict
 
 def segmentation_graph_crimes_and_precincts() -> None:
-    categ_amt_precinct_df = _find_category_amount_precinct_dataframe()
+    categ_amt_precinct_df = _find_categ_amt_precinct_df()
     fig = px.bar(categ_amt_precinct_df,
                  x= "PDQ",
                  y= "count",
@@ -60,7 +59,7 @@ def segmentation_graph_crimes_and_precincts() -> None:
                  title= "The number of crimes in a specific precinct")
     fig.show()
 
-def _find_category_amount_precinct_dataframe() -> pd.DataFrame:
+def _find_categ_amt_precinct_df() -> pd.DataFrame:
     df = pd.read_sql_query("SELECT PDQ, categorie, COUNT(categorie) AS count "
                            "FROM crime "
                            "GROUP BY PDQ, categorie;", connection)
@@ -69,6 +68,28 @@ def _find_category_amount_precinct_dataframe() -> pd.DataFrame:
     #                        "GROUP BY PDQ;", connection)
     return df
 
+def bar_graph_tof_crime_rate() -> None:
+    some_df = _find_categ_amount_tofd()
+    fig = px.bar(some_df,
+                 x = "QUART",
+                 y = "count",
+                 title= "Crime rate based on time of day")
+    fig.show()
+
+def _find_categ_amount_tofd() -> pd.DataFrame:
+    query = """
+            SELECT QUART, COUNT(categorie) AS count
+            FROM crime
+            GROUP BY QUART
+            ORDER BY CASE
+                    WHEN QUART = 'jour' then 1
+                    WHEN QUART = 'soir' then 2
+                    WHEN QUART = 'nuit' then 3
+                    END;
+            """
+    df = pd.read_sql_query(query, connection)
+    return df
+
 if __name__ == "__main__":
-    print(_find_category_amount_precinct_dataframe())
-    # segmentation_graph_crimes_and_precincts()
+    print(_find_categ_amount_tofd())
+    bar_graph_tof_crime_rate()
